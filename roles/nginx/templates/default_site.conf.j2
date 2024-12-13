@@ -1,0 +1,16 @@
+server {
+    listen 80;
+
+    location / {
+        proxy_pass http://django_backend;
+        include proxy_params;
+    }
+
+    location /static/ {
+        alias /opt/django_app/staticfiles/;
+    }
+
+    location /media/ {
+        alias /opt/django_app/media/;
+    }
+}

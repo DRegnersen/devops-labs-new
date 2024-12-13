@@ -1,0 +1,137 @@
+#---
+#- name: Install docker dependencies
+#  apt:
+#    name:
+#      - apt-transport-https
+#      - ca-certificates
+#      - curl
+#      - software-properties-common
+#    state: present
+#    update_cache: yes
+#
+#- name: Add GPG key for Docker
+#  apt_key:
+#    url: "{{ docker_gpg_url }}"
+#    state: present
+#
+#- name: Add Docker repository
+#  apt_repository:
+#    repo: "deb [arch=amd64] {{ docker_repo_url }} {{ ansible_distribution_release }} stable"
+#    state: present
+#
+#- name: Install Docker
+#  apt:
+#    name: "{{ docker_package }}"
+#    state: present
+#    update_cache: yes
+#
+#- name: Start and enable Docker service
+#  service:
+#    name: docker
+#    state: started
+#    enabled: yes
+
+---
+- name: Install Python3 and pip
+  apt:
+    name:
+      - python3
+      - python3-venv
+      - python3-pip
+    state: present
+    update_cache: yes
+
+- name: Clone Django repository
+  git:
+    repo: "{{ django_repo_url }}"
+    dest: "{{ django_app_dir }}"
+    update: yes
+    force: yes
+
+- name: Update ALLOWED_HOSTS in settings.py
+  lineinfile:
+    path: "{{ django_app_dir }}/locallibrary/settings.py"
+    regexp: "^ALLOWED_HOSTS =.*"
+    line: "ALLOWED_HOSTS = {{ django_allowed_hosts }}"
+    state: present
+
+# Устанавливаем зависимости для Docker
+- name: Install docker dependencies
+  apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - software-properties-common
+    state: present
+    update_cache: yes
+
+# Добавляем GPG ключ для Docker
+- name: Add GPG key for Docker
+  apt_key:
+    url: "{{ docker_gpg_url }}"
+    state: present
+
+# Добавляем репозиторий Docker
+- name: Add Docker repository
+  apt_repository:
+    repo: "deb [arch=amd64] {{ docker_repo_url }} {{ ansible_distribution_release }} stable"
+    state: present
+
+# Устанавливаем Docker
+- name: Install Docker
+  apt:
+    name: "{{ docker_package }}"
+    state: present
+    update_cache: yes
+
+# Устанавливаем Docker Compose
+- name: Download docker-compose binary
+  get_url:
+    url: "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-{{ ansible_system | lower }}-{{ ansible_architecture }}"
+    dest: /usr/local/bin/docker-compose
+    mode: '0755'
+
+
+- name: Set executable permissions for Docker Compose
+  file:
+    path: /usr/local/bin/docker-compose
+    mode: 'u+x'
+
+# Запускаем и включаем сервис Docker
+- name: Start and enable Docker service
+  service:
+    name: docker
+    state: started
+    enabled: yes
+
+## Создаем директорию для приложения
+#- name: Create application directory
+#  file:
+#    path: /opt/django_app
+#    state: directory
+#    owner: dnk
+#    group: dnk
+#    mode: '0755'
+
+# Копируем шаблон docker-compose.yml
+- name: Copy docker-compose.yml
+  template:
+    src: docker-compose.yml.j2
+    dest: /opt/django_app/docker-compose.yml
+    owner: dnk
+    group: dnk
+    mode: '0644'
+
+#- name: Copy application files
+#  copy:
+#    src: /opt/django_app/
+#    dest: /opt/django_app/
+#    remote_src: yes
+
+# Собираем и запускаем контейнеры с помощью Docker Compose
+- name: Build and start containers
+  command: docker-compose up -d
+  args:
+    chdir: /opt/django_app
+

@@ -1,0 +1,10 @@
+---
+docker_gpg_url: "https://download.docker.com/linux/ubuntu/gpg"
+docker_repo_url: "https://download.docker.com/linux/ubuntu"
+docker_package: "docker-ce"
+django_repo_url: 'https://github.com/mdn/django-locallibrary-tutorial'
+django_app_dir: /opt/django_app
+django_superuser_email: 'admin@example.com'
+django_superuser_username: 'admin'
+django_superuser_password: 'securepassword'
+django_allowed_hosts: "['84.201.185.192', '89.169.157.231', 'localhost', '127.0.0.1']"

@@ -1,0 +1,46 @@
+##############################################
+# Sample client-side OpenVPN 2.0 config file #
+# for connecting to multi-client server.     #
+#                                            #
+# This configuration can be used by multiple #
+# clients, however each client should have   #
+# its own cert and key files.                #
+#                                            #
+# On Windows, you might want to rename this  #
+# file so it has a .ovpn extension           #
+##############################################
+
+client
+tls-client
+auth SHA256
+cipher AES-256-CBC
+remote-cert-tls server
+tls-version-min 1.2
+
+proto udp
+remote {{ openvpn_address }} {{ openvpn_port }}
+dev tun
+
+resolv-retry 5
+nobind
+keepalive 5 30
+persist-key
+persist-tun
+verb 3
+
+key-direction 1
+<ca>
+{{ openvpn_ca_cert.content|b64decode }}
+</ca>
+
+<tls-auth>
+{{ openvpn_tls_auth.content|b64decode }}
+</tls-auth>
+
+<cert>
+{{ item.0.content|b64decode }}
+</cert>
+
+<key>
+{{ item.1.content|b64decode }}
+</key>

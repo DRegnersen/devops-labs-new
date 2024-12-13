@@ -1,0 +1,9 @@
+# tasks file for openvpn
+---
+- name: Configure server side of OpenVPN
+  become: true
+  import_tasks: server-side.yml
+
+- name: Configure client side of OpenVPN
+  become: true
+  import_tasks: client-side.yml

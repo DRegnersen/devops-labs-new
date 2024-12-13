@@ -1,0 +1,95 @@
+---
+- name: "copy clients-crt files to {{ openvpn_dir }}/server"
+  ansible.builtin.copy:
+    src: "{{ openvpn_dir }}/easy-rsa/pki/issued/{{ item }}.crt"
+    dest: "{{ openvpn_dir }}/server/{{ item | basename }}.crt"
+    remote_src: true
+    mode: '0644'
+  with_items:
+    - "{{ openvpn_clients }}"
+
+- name: "copy clients-crt files to {{ openvpn_dir }}/server"
+  ansible.builtin.copy:
+    src: "{{ openvpn_dir }}/easy-rsa/pki/private/{{ item }}.key"
+    dest: "{{ openvpn_dir }}/server/{{ item | basename }}.key"
+    remote_src: true
+    mode: '0644'
+  with_items:
+    - "{{ openvpn_clients }}"
+
+- name: "Ensure {{ openvpn_dir }}/users exists"
+  file:
+    path: "{{ openvpn_dir }}/users"
+    state: directory
+    mode: '0755'
+
+- name: "copy files to {{ openvpn_dir }}/users"
+  ansible.builtin.copy:
+    src: "{{ openvpn_dir }}/easy-rsa/pki/{{ item }}"
+    dest: "{{ openvpn_dir }}/users/{{ item | basename }}"
+    remote_src: true
+    mode: '0644'
+  loop:
+    - ca.crt
+    - ta.key
+
+- name: "copy clients-crt files to {{ openvpn_dir }}/users"
+  ansible.builtin.copy:
+    src: "{{ openvpn_dir }}/easy-rsa/pki/issued/{{ item }}.crt"
+    dest: "{{ openvpn_dir }}/users/{{ item | basename }}.crt"
+    remote_src: true
+    mode: '0644'
+  with_items:
+    - "{{ openvpn_clients }}"
+
+- name: "copy clients-crt files to {{ openvpn_dir }}/users"
+  ansible.builtin.copy:
+    src: "{{ openvpn_dir }}/easy-rsa/pki/private/{{ item }}.key"
+    dest: "{{ openvpn_dir }}/users/{{ item | basename }}.key"
+    remote_src: true
+    mode: '0644'
+  with_items:
+    - "{{ openvpn_clients }}"
+
+- name: Register ca.crt
+  slurp:
+    src: "{{ openvpn_dir }}/ca.crt"
+  register: openvpn_ca_cert
+
+- name: Register ta.key
+  slurp:
+    src: "{{ openvpn_dir }}/ta.key"
+  register: openvpn_tls_auth
+
+- name: Register client keys
+  slurp:
+    src: "{{ openvpn_dir }}/users/{{ item }}.key"
+  with_items:
+    - "{{ openvpn_clients }}"
+  register: openvpn_client_keys
+
+- name: Register client certs
+  slurp:
+    src: "{{ openvpn_dir }}/users/{{ item }}.crt"
+  with_items:
+    - "{{ openvpn_clients }}"
+  register: openvpn_client_certs
+
+- name: Generate client config
+  template:
+    src: client.ovpn.j2
+    dest: "{{ openvpn_dir }}/users/{{ item.0.item }}-{{ inventory_hostname }}.ovpn"
+    owner: root
+    group: root
+    mode: '0400'
+  with_together:
+    - "{{ openvpn_client_certs.results }}"
+    - "{{ openvpn_client_keys.results }}"
+
+- name: Fetch client config
+  fetch:
+    src: "{{ openvpn_dir }}/users/{{ item }}-{{ inventory_hostname }}.ovpn"
+    dest: "{{ playbook_dir }}/ovpn/{{ inventory_hostname }}-{{ item }}.ovpn"
+    flat: true
+  with_items:
+    - "{{ openvpn_clients }}"

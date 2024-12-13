@@ -1,0 +1,9 @@
+# defaults file for openvpn
+---
+openvpn_easyrsa_dir: "/usr/share/easy-rsa"
+openvpn_dir: "/etc/openvpn"
+
+openvpn_port: 1149
+openvpn_address: 51.250.7.162
+openvpn_clients:
+  - dnk21

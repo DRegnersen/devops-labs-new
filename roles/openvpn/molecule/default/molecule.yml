@@ -1,0 +1,33 @@
+#---
+#driver:
+#  name: default
+#platforms:
+#  - name: instance
+#    # you might want to add your own variables here based on what provisioning
+#    # you are doing like:
+#    # image: quay.io/centos/centos:stream8
+
+---
+platforms:
+  - name: remote
+    host: 158.160.50.1
+    user: dnk
+    ssh_extra_args: "-o StrictHostKeyChecking=no"
+    private_key_file: ~/.ssh/id_ed25519  
+    become: true
+    ansible_connection: ssh  
+
+provisioner:
+  name: ansible
+  inventory:
+    hosts:
+      all:
+        hosts:
+          remote:
+            ansible_host: 158.160.50.1
+            ansible_user: dnk
+            ansible_private_key_file: ~/.ssh/id_ed25519
+            ansible_become: true
+
+verifier:
+  name: ansible

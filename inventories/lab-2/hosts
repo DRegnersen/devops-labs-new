@@ -2,16 +2,13 @@
 web01 ansible_ssh_host=84.201.185.192 ansible_user=dnk
 web02 ansible_ssh_host=89.169.157.231 ansible_user=dnk
 
-
 [db]
 db01 ansible_ssh_host=84.201.185.192 ansible_user=dnk
 db02 ansible_ssh_host=89.169.157.231 ansible_user=dnk
 
-
 [app]
 app01 ansible_ssh_host=84.201.185.192 ansible_user=dnk
 app02 ansible_ssh_host=89.169.157.231 ansible_user=dnk
-
 
 [web:vars]
 ansible_connection=ssh

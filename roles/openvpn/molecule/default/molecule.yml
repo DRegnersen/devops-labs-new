@@ -1,12 +1,3 @@
-#---
-#driver:
-#  name: default
-#platforms:
-#  - name: instance
-#    # you might want to add your own variables here based on what provisioning
-#    # you are doing like:
-#    # image: quay.io/centos/centos:stream8
-
 ---
 platforms:
   - name: remote

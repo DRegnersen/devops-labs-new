@@ -13,11 +13,6 @@
         - name: Populate instance config dict  # noqa jinja
           ansible.builtin.set_fact:
             instance_conf_dict: {}
-            # instance': "{{ }}",
-            # address': "{{ }}",
-            # user': "{{ }}",
-            # port': "{{ }}",
-            # 'identity_file': "{{ }}", }
           with_items: "{{ server.results }}"
           register: instance_config_dict
 

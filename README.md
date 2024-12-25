@@ -17,10 +17,3 @@ ansible-playbook -i inventories/lab-<номер лабы от 1 до 4>/hosts pl
 ```
 ansible-playbook -i inventories/lab-2/hosts playbook.yml
 ```
-
-### Molecule
-
-Чтобы запустить тесты molecule выполняем команду:
-```
-molecule test
-```

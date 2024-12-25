@@ -1,0 +1,4 @@
+- src: git@gitlab.com:ansible-roles6154947/postgres.git
+  version: master
+  scm: git
+  name: postgres

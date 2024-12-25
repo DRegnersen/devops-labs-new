@@ -1,0 +1,92 @@
+platforms:
+  - name: db_master
+    host: 84.201.133.115
+    user: dnk
+    ssh_extra_args: "-o StrictHostKeyChecking=no"
+    private_key_file: ~/.ssh/id_ed25519
+    become: true
+    ansible_connection: ssh
+    groups:
+      - db_master
+
+  - name: db_slave
+    host: 89.169.146.163
+    user: dnk
+    ssh_extra_args: "-o StrictHostKeyChecking=no"
+    private_key_file: ~/.ssh/id_ed25519
+    become: true
+    ansible_connection: ssh
+    groups:
+      - db_slave
+
+provisioner:
+  name: ansible
+  inventory:
+    hosts:
+      all:
+        children:
+          db_master:
+            hosts:
+              db_master:
+                ansible_host: 84.201.133.115
+                ansible_user: dnk
+                ansible_private_key_file: ~/.ssh/id_ed25519
+                ansible_become: true
+          db_slave:
+            hosts:
+              db_slave:
+                ansible_host: 89.169.146.163
+                ansible_user: dnk
+                ansible_private_key_file: ~/.ssh/id_ed25519
+                ansible_become: true
+    group_vars:
+      db_master:
+        pg_apt_repo_url: "deb http://apt.postgresql.org/pub/repos/apt/"
+        pg_system_version: "jammy"
+        pg_master:
+          db_owner: postgres
+          db_name: postgres
+          host: 84.201.133.115
+          port: 5432
+          username: dnk
+          password: dnk
+          data_dir: /var/lib/postgresql
+          conf_dir: /etc/postgresql
+          version: 14
+        pg_replicas:
+          - db_owner: postgres
+            db_name: postgres
+            host: 89.169.146.163
+            port: 5432
+            username: dnk
+            password: dnk
+            data_dir: /var/lib/postgresql
+            conf_dir: /etc/postgresql
+            version: 14
+
+      db_slave:
+        pg_apt_repo_url: "deb http://apt.postgresql.org/pub/repos/apt/"
+        pg_system_version: "jammy"
+        pg_master:
+          db_owner: postgres
+          db_name: postgres
+          host: 84.201.133.115
+          port: 5432
+          username: dnk
+          password: dnk
+          data_dir: /var/lib/postgresql
+          conf_dir: /etc/postgresql
+          version: 14
+        pg_replicas:
+          - db_owner: postgres
+            db_name: postgres
+            host: 89.169.146.163
+            port: 5432
+            username: dnk
+            password: dnk
+            data_dir: /var/lib/postgresql
+            conf_dir: /etc/postgresql
+            version: 14
+
+verifier:
+  name: ansible

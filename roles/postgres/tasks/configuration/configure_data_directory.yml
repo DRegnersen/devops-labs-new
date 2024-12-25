@@ -1,0 +1,52 @@
+---
+- name: Get current data_directory from postgresql.conf
+  ansible.builtin.shell: "grep ^data_directory {{ pg_conf_path }}/{{ pg_version }}/main/postgresql.conf"
+  register: data_directory_line
+
+- name: Extract and set data_directory fact
+  ansible.builtin.set_fact:
+    data_directory: "{{ data_directory_line.stdout.split('=')[1] | trim | regex_replace(\"'\", '') }}"
+
+- name: Stop PostgreSQL service if data_directory is different
+  ansible.builtin.systemd:
+    name: postgresql
+    state: stopped
+  when: data_directory != pg_custom_data_directory
+
+- name: Create custom data_directory directory
+  ansible.builtin.file:
+    dest: "{{ pg_custom_data_directory }}"
+    recurse: yes
+    state: directory
+  when: data_directory != pg_custom_data_directory
+
+- name: Copy PostgreSQL data to custom data_directory
+  ansible.posix.synchronize:
+    src: "{{ data_directory }}/"
+    dest: "{{ pg_custom_data_directory }}"
+    mode: pull
+    archive: yes
+    delete: yes
+    recursive: yes
+  delegate_to: "{{ inventory_hostname }}"
+  when: data_directory != pg_custom_data_directory
+
+- name: Update data_directory in postgresql.conf
+  ansible.builtin.lineinfile:
+    path: "{{ pg_conf_path }}/{{ pg_version }}/main/postgresql.conf"
+    regexp: "^(.*)data_directory(.*)$"
+    line: "data_directory = '{{ pg_custom_data_directory }}'"
+    backrefs: yes
+  when: data_directory != pg_custom_data_directory
+
+- name: Remove original data_directory directory
+  ansible.builtin.file:
+    path: "{{ data_directory }}"
+    state: absent
+  when: data_directory != pg_custom_data_directory
+
+- name: Start PostgreSQL service with updated data_directory
+  ansible.builtin.systemd:
+    name: postgresql
+    state: started
+  when: data_directory != pg_custom_data_directory

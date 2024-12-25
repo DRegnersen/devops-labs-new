@@ -1,0 +1,42 @@
+---
+- name: Set listen_addresses
+  ansible.builtin.lineinfile:
+    path: "{{ pg_instance_conf_path }}/{{ pg_instance_version }}/main/postgresql.conf"
+    regexp: '^#?listen_addresses ='
+    line: "listen_addresses = '{{ listen_addresses }}'"
+  notify: Restart postgresql service
+
+- name: Set hot_standby
+  ansible.builtin.lineinfile:
+    path: "{{ pg_instance_conf_path }}/{{ pg_instance_version }}/main/postgresql.conf"
+    regexp: '^#?hot_standby ='
+    line: "hot_standby = {{ hot_standby }}"
+  notify: Restart postgresql service
+
+- name: Set wal_level
+  ansible.builtin.lineinfile:
+    path: "{{ pg_instance_conf_path }}/{{ pg_instance_version }}/main/postgresql.conf"
+    regexp: '^#?wal_level ='
+    line: "wal_level = {{ wal_level }}"
+  notify: Restart postgresql service
+
+- name: Set max_wal_senders
+  ansible.builtin.lineinfile:
+    path: "{{ pg_instance_conf_path }}/{{ pg_instance_version }}/main/postgresql.conf"
+    regexp: '^#?max_wal_senders ='
+    line: "max_wal_senders = {{ max_wal_senders }}"
+  notify: Restart postgresql service
+
+- name: Set archive_mode
+  ansible.builtin.lineinfile:
+    path: "{{ pg_instance_conf_path }}/{{ pg_instance_version }}/main/postgresql.conf"
+    regexp: '^#?archive_mode ='
+    line: "archive_mode = {{ archive_mode }}"
+  notify: Restart postgresql service
+
+- name: Set archive_command
+  ansible.builtin.lineinfile:
+    path: "{{ pg_instance_conf_path }}/{{ pg_instance_version }}/main/postgresql.conf"
+    regexp: '^#?archive_command ='
+    line: "archive_command = 'cp %p {{ pg_instance_data_path }}/{{ pg_instance_version }}/main/archive/%f'"
+  notify: Restart postgresql service

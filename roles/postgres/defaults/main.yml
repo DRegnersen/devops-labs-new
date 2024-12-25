@@ -1,0 +1,20 @@
+---
+pg_apt_key: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+pg_allowed_host: "0.0.0.0/0"
+pg_auth_methods:
+  - scram-sha-256
+  - md5
+
+listen_addresses: '*'
+hot_standby: on
+wal_level: hot_standby
+max_wal_senders: 10
+archive_mode: on
+
+pg_required_apt_packages:
+  - python3-pip
+  - acl
+pg_required_pip_packages:
+  - psycopg2-binary
+    
+    

@@ -1,0 +1,13 @@
+[db_master]
+db01 ansible_ssh_host=84.201.185.192 ansible_user=dnk
+
+[db_slave]
+db02 ansible_ssh_host=89.169.157.231 ansible_user=dnk
+
+[db:children]
+db_master
+db_slave
+
+[db:vars]
+ansible_connection=ssh
+ansible_ssh_private_key_file=~/.ssh/id_ed25519

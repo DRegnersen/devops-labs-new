@@ -1,0 +1,31 @@
+---
+- name: master | Configure master pg_hba.conf
+  block:
+    - include_tasks: configuration/pg_hba_conf.yml
+      vars:
+        pg_instance_conf_path: "{{ pg_conf_path }}"
+        pg_instance_version: "{{ pg_version }}"
+
+    - name: Allow connections for replication users
+      ansible.builtin.lineinfile:
+        path: "{{ pg_conf_path }}/{{ pg_version }}/main/pg_hba.conf"
+        line: "host    replication             {{ item.username }}             {{ item.host }}/32               md5"
+      loop: "{{ pg_replicas }}"
+      notify: Restart postgresql service
+
+- name: master | Configure postgresql.conf
+  block:
+    - include_tasks: configuration/postgresql_conf.yml
+      vars:
+        pg_instance_conf_path: "{{ pg_conf_path }}"
+        pg_instance_data_path: "{{ pg_data_path }}"
+        pg_instance_version: "{{ pg_version }}"
+
+    - name: Create replication users
+      become_user: "{{ pg_db_owner }}"
+      community.general.postgresql_user:
+        name: "{{ item.username }}"
+        password: "{{ item.password }}"
+        role_attr_flags: REPLICATION,LOGIN
+      loop: "{{ pg_replicas }}"
+      notify: Restart postgresql service

@@ -1,0 +1,9 @@
+---
+- name: Allow SSL connections for PostgreSQL users
+  ansible.builtin.lineinfile:
+    path: "{{ pg_instance_conf_path }}/{{ pg_instance_version }}/main/pg_hba.conf"
+    line: "hostssl all             all             {{ pg_allowed_host }}               {{ auth_method }}"
+  loop: "{{ pg_auth_methods }}"
+  loop_control:
+    loop_var: auth_method
+  notify: Restart postgresql service

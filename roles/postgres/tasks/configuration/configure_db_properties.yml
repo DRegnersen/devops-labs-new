@@ -1,0 +1,25 @@
+---
+- name: Create and configure PostgreSQL database and user
+  become: yes
+  become_user: "{{ pg_db_owner }}"
+  block:
+    - name: Create PostgreSQL database
+      community.general.postgresql_db:
+        name: "{{ pg_db_name }}"
+        port: "{{ pg_db_port }}"
+      when: pg_db_name is defined
+
+    - name: Create PostgreSQL user
+      community.general.postgresql_user:
+        db: "{{ pg_db_name }}"
+        name: "{{ pg_db_user }}"
+        password: "{{ pg_db_user_password }}"
+        role_attr_flags: LOGIN,CREATEDB
+      notify: Restart postgresql service
+      when: pg_db_name is defined and pg_db_user is defined and pg_db_user_password is defined
+
+    - name: Set PostgreSQL database owner
+      community.general.postgresql_db:
+        db: "{{ pg_db_name }}"
+        owner: "{{ pg_db_owner }}"
+      when: pg_db_name is defined

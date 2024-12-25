@@ -1,0 +1,23 @@
+pg_apt_repo_url: deb http://apt.postgresql.org/pub/repos/apt/
+pg_system_version: jammy
+#pg_custom_data_directory: /var/lib/postgresql/14/main
+pg_master:
+  db_owner: postgres
+  db_name: postgres
+  host: 84.201.185.192
+  port: 5432
+  username: dnk
+  password: dnk
+  data_dir: /var/lib/postgresql
+  conf_dir: /etc/postgresql
+  version: 14
+pg_replicas:
+  - db_owner: postgres
+    db_name: postgres
+    host: 89.169.157.231
+    port: 5432
+    username: dnk
+    password: dnk
+    data_dir: /var/lib/postgresql
+    conf_dir: /etc/postgresql
+    version: 14

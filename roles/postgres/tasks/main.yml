@@ -1,0 +1,86 @@
+---
+- name: Configure master database
+  when: "'db_master' in group_names"
+  block:
+    - name: Install and configure PostgreSQL master
+      ansible.builtin.include_tasks: configuration/configure_postgresql.yml
+      vars:
+        pg_version: "{{ pg_master.version }}"
+        pg_conf_path: "{{ pg_master.conf_dir }}"
+        pg_port: "{{ pg_master.port }}"
+        pg_db_name: "{{ pg_master.db_name }}"
+        pg_db_owner: "{{ pg_master.db_owner }}"
+        pg_db_user: "{{ pg_master.username }}"
+        pg_db_user_password: "{{ pg_master.password }}"
+        
+    - name: Set master custom data path
+      ansible.builtin.include_tasks: configuration/configure_data_directory.yml
+      vars:
+        pg_custom_data_directory: "{{ pg_master.custom_data_directory }}"
+        pg_conf_path: "{{ pg_master.conf_dir }}"
+        pg_version: "{{ pg_master.version }}"
+      when: "pg_master.pg_custom_data_directory is defined"
+
+    - name: Create master Database and User
+      ansible.builtin.include_tasks: configuration/configure_db_properties.yml
+      vars:
+        pg_db_name: "{{ pg_master.db_name }}"
+        pg_db_owner: "{{ pg_master.db_owner }}"
+        pg_db_user: "{{ pg_master.username }}"
+        pg_db_user_password: "{{ pg_master.password }}"
+        pg_db_port: "{{ pg_master.port }}"
+
+    - name: Make database master
+      ansible.builtin.include_tasks: master.yml
+      vars:
+        pg_conf_path: "{{ pg_master.conf_dir }}"
+        pg_version: "{{ pg_master.version }}"
+        pg_data_path: "{{ pg_master.data_dir }}"
+        pg_db_owner: "{{ pg_master.db_owner }}"
+
+- name: Configure slave database
+  when: "'db_slave' in group_names"
+  block:
+    - name: Install and configure PostgreSQL slave
+      ansible.builtin.include_tasks: configuration/configure_postgresql.yml
+      vars:
+        pg_version: "{{ item.version }}"
+        pg_conf_path: "{{ item.conf_dir }}"
+        pg_port: "{{ item.port }}"
+        pg_db_name: "{{ item.db_name }}"
+        pg_db_owner: "{{ item.db_owner }}"
+        pg_db_user: "{{ item.username }}"
+        pg_db_user_password: "{{ item.password }}"
+      loop: "{{ pg_replicas }}"
+
+    - name: Set replica custom data path
+      ansible.builtin.include_tasks: configuration/configure_data_directory.yml
+      vars:
+        pg_custom_data_directory: "{{ item.custom_data_directory }}"
+        pg_conf_path: "{{ item.conf_dir }}"
+        pg_version: "{{ item.version }}"
+      loop: "{{ pg_replicas }}"
+      when: "item.pg_custom_data_directory is defined"
+
+    - name: Create slave Database and User
+      ansible.builtin.include_tasks: configuration/configure_db_properties.yml
+      vars:
+        pg_db_name: "{{ item.db_name }}"
+        pg_db_owner: "{{ item.db_owner }}"
+        pg_db_user: "{{ item.username }}"
+        pg_db_user_password: "{{ item.password }}"
+        pg_db_port: "{{ item.port }}"
+      loop: "{{ pg_replicas }}"
+
+    - name: Configure Slave
+      ansible.builtin.include_tasks: slave.yml
+      vars:
+        pg_master_host: "{{ pg_master.host }}"
+        pg_master_port: "{{ pg_master.port }}"
+        pg_master_username: "{{ pg_master.username }}"
+        pg_master_password: "{{ pg_master.password }}"
+        pg_conf_path: "{{ item.conf_dir }}"
+        pg_data_path: "{{ item.data_dir }}"
+        pg_version: "{{ item.version }}"
+        pg_username: "{{ item.username }}"
+      loop: "{{ pg_replicas }}"

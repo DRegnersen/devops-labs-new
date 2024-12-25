@@ -1,0 +1,60 @@
+---
+- name: Install and configure PostgreSQL
+  block:
+    - name: Add PostgreSQL apt repository and install dependencies
+      ansible.builtin.apt_key:
+        url: "{{ pg_apt_key }}"
+        state: present
+
+    - name: Add PostgreSQL apt repository
+      ansible.builtin.apt_repository:
+        repo: "{{ pg_apt_repo_url }} {{ pg_system_version }}-pgdg {{ pg_version }}"
+        state: present
+        update_cache: yes
+
+    - name: Install PostgreSQL requirements
+      ansible.builtin.apt:
+        name: "{{ pg_required_apt_packages }}"
+        update_cache: yes
+
+    - name: Install PostgreSQL required pip packages
+      ansible.builtin.pip:
+        name: "{{ pg_required_pip_packages }}"
+
+    - name: Install PostgreSQL packages
+      ansible.builtin.apt: 
+        name:
+          - "postgresql-{{ pg_version }}"
+          - "postgresql-contrib-{{ pg_version }}"
+        state: present
+        update_cache: yes
+
+    - name: Ensure PostgreSQL service is started and enabled on boot
+      ansible.builtin.systemd:
+        name: "postgresql@{{ pg_version }}-main"
+        enabled: yes
+        state: started
+
+    - name: Add PostgreSQL config options
+      ansible.builtin.blockinfile:
+        path: "{{ pg_conf_path }}/{{ pg_version }}/main/postgresql.conf"
+        create: yes
+        block: |
+          listen_addresses = '{{ listen_addresses }}'
+        state: present
+
+    - name: Allow all access to PostgreSQL TCP port
+      community.general.ufw:
+        rule: allow
+        port: "{{ pg_port }}"
+        proto: tcp
+
+    - name: Allow connections for users
+      ansible.builtin.lineinfile:
+        path: "{{ pg_conf_path }}/{{ pg_version }}/main/pg_hba.conf"
+        line: "host    all             all             {{ pg_allowed_host }}               {{ auth_method }}"
+        state: present
+      loop: "{{ pg_auth_methods }}"
+      loop_control:
+        loop_var: auth_method
+      notify: Restart postgresql service

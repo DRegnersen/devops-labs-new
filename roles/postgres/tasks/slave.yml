@@ -1,0 +1,82 @@
+- name: slave | Configure pg_hba.conf
+  block:
+    - include_tasks: configuration/pg_hba_conf.yml
+      vars:
+        pg_instance_conf_path: "{{ pg_conf_path }}"
+        pg_instance_version: "{{ pg_version }}"
+
+    - name: Set master host trust
+      ansible.builtin.lineinfile:
+        path: "{{ pg_conf_path }}/{{ pg_version }}/main/pg_hba.conf"
+        line: "hostssl all             all             {{ pg_master_host }}/32            trust"
+      notify: Restart postgresql service
+
+    - name: Allow connections for slave users
+      ansible.builtin.lineinfile:
+        path: "{{ pg_conf_path }}/{{ pg_version }}/main/pg_hba.conf"
+        line: "host    replication             {{ pg_username }}             {{ pg_master_host }}/32               md5"
+      notify: Restart postgresql service
+
+- name: slave | Initialize replicas
+  become: yes
+  block:
+    - name: Gather service facts
+      ansible.builtin.service_facts:
+
+    - name: Check if postgresql service is running
+      ansible.builtin.systemd:
+        name: "postgresql"
+        state: started
+      register: postgresql_status
+      failed_when: false
+      changed_when: false 
+
+    - name: slave | Check if data directory exists
+      stat:
+        path: "{{ pg_data_path }}/{{ pg_version }}/main"
+      register: pg_data_directory
+
+    - name: slave | Create data directory if not exists
+      ansible.builtin.file:
+        path: "{{ pg_data_path }}/{{ pg_version }}/main"
+        state: directory
+        owner: postgres
+        group: postgres
+        mode: '0700'
+      when: pg_data_directory.stat.exists == false
+
+    - name: Hold until Postgresql is up and running
+      wait_for:
+        host: "{{ pg_master_host }}"
+        port: "{{ pg_master_port }}"
+
+    - name: slave | Check if replication is already initialized
+      stat:
+        path: "{{ pg_data_path }}/{{ pg_version }}/main/PG_VERSION"
+      register: pg_replication_initialized
+
+    - name: slave | Run pg_basebackup only if replication not initialized
+      become: true
+      become_user: postgres
+      ansible.builtin.shell: "/usr/bin/pg_basebackup -D {{ pg_data_path }}/{{ pg_version }}/main -c fast -Fp -R -Xs -P -w -v -h {{ pg_master_host }} -U {{ pg_master_username }} -p {{ pg_master_port }}"
+      environment:
+        PGPASSWORD: "{{ pg_master_password }}"
+      when: pg_replication_initialized.stat.exists == false
+      register: result
+      retries: 3
+      delay: 5
+      notify: Restart postgresql service
+
+    - name: slave | Change data_directory ownership if necessary
+      ansible.builtin.command:
+        cmd: "chown -R postgres {{ pg_data_path }}/{{ pg_version }}/main"
+        creates: "{{ pg_data_path }}/{{ pg_version }}/main/PG_VERSION"
+      notify: Restart postgresql service
+
+    - name: slave | Restart postgresql service if necessary
+      ansible.builtin.systemd:
+        name: "postgresql"
+        state: restarted
+      when:
+        - "'postgresql' in ansible_facts.services"
+        - ansible_facts.services['postgresql'].state != 'running'  # Перезапускать только если не запущен

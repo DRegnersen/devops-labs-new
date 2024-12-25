@@ -20,7 +20,13 @@ ansible-playbook -i inventories/lab-2/hosts playbook.yml
 
 ### Molecule
 
-Чтобы запустить тесты molecule выполняем команду:
+Чтобы создать новый сценарий, выполняем команду:
+```
+molecule init scenario --scenario-name <scenario_name> --driver-name <driver_name>
+```
+где `<driver_name>` - docker, vagrant или какой-либо другой драйвер
+
+Чтобы запустить тесты molecule, выполняем команду:
 ```
 molecule test
 ```
